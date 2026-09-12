@@ -205,3 +205,56 @@ export async function requireComplaintManagementAccess(
 
   return access;
 }
+
+export async function requireSiteScopeManagementAccess(
+  ctx: AuthCtx,
+  siteId: Id<"sites">,
+) {
+  const access = await requireSiteAccess(ctx, siteId);
+
+  if (
+    access.role !== "SUPER_ADMIN" &&
+    access.role !== "AREA_MANAGER" &&
+    access.role !== "SITE_MANAGER"
+  ) {
+    throw new Error(
+      "You do not have permission to manage Periodic Planner scope at this site",
+    );
+  }
+
+  return access;
+}
+
+export async function requirePlannerCompletionAccess(
+  ctx: AuthCtx,
+  siteId: Id<"sites">,
+) {
+  const access = await requireSiteAccess(ctx, siteId);
+
+  if (
+    access.role !== "SUPER_ADMIN" &&
+    access.role !== "AREA_MANAGER" &&
+    access.role !== "SITE_MANAGER" &&
+    access.role !== "SUPERVISOR"
+  ) {
+    throw new Error(
+      "You do not have permission to complete Periodic Planner work at this site",
+    );
+  }
+
+  return access;
+}
+
+export async function requireAssetMasterManagementAccess(ctx: AuthCtx, siteId: Id<"sites">) {
+  const access = await requireSiteAccess(ctx, siteId);
+  if (access.role !== "SUPER_ADMIN" && access.role !== "AREA_MANAGER" && access.role !== "SITE_MANAGER") {
+    throw new Error("You do not have permission to manage asset master data");
+  }
+  return access;
+}
+
+export async function requireAssetOperationsAccess(ctx: AuthCtx, siteId: Id<"sites">) {
+  const access = await requireSiteAccess(ctx, siteId);
+  if (access.role === "CLEANER") throw new Error("You do not have permission to manage asset records");
+  return access;
+}

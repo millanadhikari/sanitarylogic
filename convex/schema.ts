@@ -1,6 +1,78 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+const siteScopeCategory = v.union(
+  v.literal("WASTE"),
+  v.literal("CARPETED_FLOORS"),
+  v.literal("HARD_FLOORS"),
+  v.literal("TENANCY_AREA"),
+  v.literal("KITCHEN"),
+);
+
+const plannerCompletionMode = v.union(
+  v.literal("AUTO"),
+  v.literal("MANUAL"),
+);
+
+const plannerWeekday = v.union(
+  v.literal(0),
+  v.literal(1),
+  v.literal(2),
+  v.literal(3),
+  v.literal(4),
+  v.literal(5),
+  v.literal(6),
+);
+
+const activeStatus = v.union(v.literal("ACTIVE"), v.literal("INACTIVE"));
+
+const specialScopeSchedule = v.union(
+  v.object({
+    companyId: v.id("companies"),
+    siteId: v.id("sites"),
+    tenancyId: v.id("tenancies"),
+    templateId: v.id("tenancyScopeTemplates"),
+    scopeItemId: v.id("tenancyScopeItems"),
+    sourceScheduleKey: v.optional(v.string()),
+    frequency: v.union(
+      v.literal("DAILY"),
+      v.literal("TWICE_WEEKLY"),
+      v.literal("WEEKLY"),
+      v.literal("MONTHLY"),
+      v.literal("QUARTERLY"),
+      v.literal("BI_ANNUAL"),
+      v.literal("ANNUAL"),
+    ),
+    recurrenceMode: v.literal("RECURRING"),
+    completionMode: plannerCompletionMode,
+    startsOn: v.string(),
+    endsOn: v.optional(v.string()),
+    weekdays: v.optional(v.array(plannerWeekday)),
+    status: activeStatus,
+    createdBy: v.id("users"),
+    updatedBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }),
+  v.object({
+    companyId: v.id("companies"),
+    siteId: v.id("sites"),
+    tenancyId: v.id("tenancies"),
+    templateId: v.id("tenancyScopeTemplates"),
+    scopeItemId: v.id("tenancyScopeItems"),
+    sourceScheduleKey: v.optional(v.string()),
+    frequency: v.literal("SITE_DETERMINED"),
+    recurrenceMode: v.literal("MANUAL_DATE"),
+    completionMode: v.literal("MANUAL"),
+    scheduledFor: v.string(),
+    status: activeStatus,
+    createdBy: v.id("users"),
+    updatedBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }),
+);
+
 export default defineSchema({
   users: defineTable({
     clerkUserId: v.string(),
@@ -271,4 +343,300 @@ export default defineSchema({
     .index("by_tenancy_and_number", ["tenancyId", "workOrderNumber"])
     .index("by_site", ["siteId"])
     .index("by_company", ["companyId"]),
+
+  siteScopeTemplates: defineTable({
+    companyId: v.id("companies"),
+    siteId: v.id("sites"),
+    templateType: v.literal("STANDARD_TENANCY"),
+    sourceTemplateKey: v.literal("STANDARD_TENANCY_CLEAN"),
+    sourceTemplateVersion: v.string(),
+    name: v.string(),
+    description: v.optional(v.string()),
+    timeZone: v.string(),
+    status: activeStatus,
+    createdBy: v.id("users"),
+    updatedBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_companyId", ["companyId"])
+    .index("by_siteId", ["siteId"])
+    .index("by_siteId_and_templateType_and_status", [
+      "siteId",
+      "templateType",
+      "status",
+    ]),
+
+  siteScopeItems: defineTable({
+    companyId: v.id("companies"),
+    siteId: v.id("sites"),
+    templateId: v.id("siteScopeTemplates"),
+    sourceItemKey: v.optional(v.string()),
+    category: siteScopeCategory,
+    title: v.string(),
+    description: v.optional(v.string()),
+    instructions: v.optional(v.string()),
+    sortOrder: v.number(),
+    status: activeStatus,
+    createdBy: v.id("users"),
+    updatedBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_siteId", ["siteId"])
+    .index("by_templateId", ["templateId"])
+    .index("by_templateId_and_status", ["templateId", "status"])
+    .index("by_templateId_and_category", ["templateId", "category"])
+    .index("by_templateId_and_category_and_status", [
+      "templateId",
+      "category",
+      "status",
+    ]),
+
+  siteScopeItemSchedules: defineTable(
+    v.union(
+      v.object({
+        companyId: v.id("companies"),
+        siteId: v.id("sites"),
+        templateId: v.id("siteScopeTemplates"),
+        scopeItemId: v.id("siteScopeItems"),
+        sourceScheduleKey: v.optional(v.string()),
+        frequency: v.union(
+          v.literal("DAILY"),
+          v.literal("TWICE_WEEKLY"),
+          v.literal("WEEKLY"),
+          v.literal("MONTHLY"),
+          v.literal("QUARTERLY"),
+          v.literal("BI_ANNUAL"),
+          v.literal("ANNUAL"),
+        ),
+        recurrenceMode: v.literal("RECURRING"),
+        completionMode: plannerCompletionMode,
+        startsOn: v.string(),
+        endsOn: v.optional(v.string()),
+        weekdays: v.optional(v.array(plannerWeekday)),
+        status: activeStatus,
+        createdBy: v.id("users"),
+        updatedBy: v.id("users"),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+      }),
+      v.object({
+        companyId: v.id("companies"),
+        siteId: v.id("sites"),
+        templateId: v.id("siteScopeTemplates"),
+        scopeItemId: v.id("siteScopeItems"),
+        sourceScheduleKey: v.optional(v.string()),
+        frequency: v.literal("SITE_DETERMINED"),
+        recurrenceMode: v.literal("MANUAL_DATE"),
+        completionMode: v.literal("MANUAL"),
+        scheduledFor: v.string(),
+        status: activeStatus,
+        createdBy: v.id("users"),
+        updatedBy: v.id("users"),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+      }),
+    ),
+  )
+    .index("by_siteId", ["siteId"])
+    .index("by_scopeItemId", ["scopeItemId"])
+    .index("by_scopeItemId_and_status", ["scopeItemId", "status"])
+    .index("by_templateId_and_status", ["templateId", "status"])
+    .index("by_siteId_and_frequency_and_status", [
+      "siteId",
+      "frequency",
+      "status",
+    ]),
+
+  tenancyScopeTemplates: defineTable({
+    companyId: v.id("companies"),
+    siteId: v.id("sites"),
+    tenancyId: v.id("tenancies"),
+    templateType: v.literal("SPECIAL_TENANCY"),
+    sourceTemplateKey: v.literal("SPECIAL_TENANCY_SERVICES"),
+    sourceTemplateVersion: v.string(),
+    name: v.string(),
+    description: v.optional(v.string()),
+    timeZone: v.string(),
+    status: activeStatus,
+    createdBy: v.id("users"),
+    updatedBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_siteId", ["siteId"])
+    .index("by_tenancyId", ["tenancyId"])
+    .index("by_tenancyId_and_templateType_and_status", [
+      "tenancyId",
+      "templateType",
+      "status",
+    ]),
+
+  tenancyScopeItems: defineTable({
+    companyId: v.id("companies"),
+    siteId: v.id("sites"),
+    tenancyId: v.id("tenancies"),
+    templateId: v.id("tenancyScopeTemplates"),
+    sourceServiceKey: v.optional(v.string()),
+    title: v.string(),
+    description: v.optional(v.string()),
+    instructions: v.optional(v.string()),
+    sortOrder: v.number(),
+    status: activeStatus,
+    createdBy: v.id("users"),
+    updatedBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_siteId", ["siteId"])
+    .index("by_tenancyId", ["tenancyId"])
+    .index("by_templateId", ["templateId"])
+    .index("by_templateId_and_status", ["templateId", "status"]),
+
+  tenancyScopeItemSchedules: defineTable(specialScopeSchedule)
+    .index("by_siteId", ["siteId"])
+    .index("by_tenancyId", ["tenancyId"])
+    .index("by_scopeItemId", ["scopeItemId"])
+    .index("by_scopeItemId_and_status", ["scopeItemId", "status"])
+    .index("by_templateId_and_status", ["templateId", "status"])
+    .index("by_siteId_and_frequency_and_status", [
+      "siteId",
+      "frequency",
+      "status",
+    ]),
+
+  plannerCompletions: defineTable(
+    v.union(
+      v.object({
+        scopeType: v.optional(v.literal("STANDARD")),
+        companyId: v.id("companies"),
+        siteId: v.id("sites"),
+        tenancyId: v.id("tenancies"),
+        templateId: v.id("siteScopeTemplates"),
+        scopeItemId: v.id("siteScopeItems"),
+        scheduleId: v.id("siteScopeItemSchedules"),
+        occurrenceDate: v.string(),
+        completionModeSnapshot: plannerCompletionMode,
+        status: v.union(v.literal("COMPLETED"), v.literal("VOIDED")),
+        completedAt: v.number(),
+        completedBy: v.optional(v.id("users")),
+        notes: v.optional(v.string()),
+        voidedAt: v.optional(v.number()),
+        voidedBy: v.optional(v.id("users")),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+      }),
+      v.object({
+        scopeType: v.literal("SPECIAL"),
+        companyId: v.id("companies"),
+        siteId: v.id("sites"),
+        tenancyId: v.id("tenancies"),
+        specialTemplateId: v.id("tenancyScopeTemplates"),
+        specialScopeItemId: v.id("tenancyScopeItems"),
+        specialScheduleId: v.id("tenancyScopeItemSchedules"),
+        occurrenceDate: v.string(),
+        completionModeSnapshot: plannerCompletionMode,
+        status: v.union(v.literal("COMPLETED"), v.literal("VOIDED")),
+        completedAt: v.number(),
+        completedBy: v.optional(v.id("users")),
+        notes: v.optional(v.string()),
+        voidedAt: v.optional(v.number()),
+        voidedBy: v.optional(v.id("users")),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+      }),
+    ),
+  )
+    .index("by_scheduleId_and_occurrenceDate", [
+      "scheduleId",
+      "occurrenceDate",
+    ])
+    .index("by_scopeItemId_and_occurrenceDate", [
+      "scopeItemId",
+      "occurrenceDate",
+    ])
+    .index("by_siteId_and_occurrenceDate", ["siteId", "occurrenceDate"])
+    .index("by_tenancyId_and_occurrenceDate", [
+      "tenancyId",
+      "occurrenceDate",
+    ])
+    .index("by_tenancyId_and_scheduleId_and_occurrenceDate", [
+      "tenancyId",
+      "scheduleId",
+      "occurrenceDate",
+    ])
+    .index("by_siteId_and_completedAt", ["siteId", "completedAt"])
+    .index("by_tenancyId_and_completedAt", ["tenancyId", "completedAt"])
+    .index("by_scopeItemId_and_completedAt", ["scopeItemId", "completedAt"])
+    .index("by_specialScheduleId_and_occurrenceDate", [
+      "specialScheduleId",
+      "occurrenceDate",
+    ])
+    .index("by_tenancyId_and_specialScheduleId_and_occurrenceDate", [
+      "tenancyId",
+      "specialScheduleId",
+      "occurrenceDate",
+    ])
+    .index("by_specialScopeItemId_and_completedAt", [
+      "specialScopeItemId",
+      "completedAt",
+    ]),
+
+  assets: defineTable({
+    companyId: v.id("companies"),
+    siteId: v.id("sites"),
+    assetName: v.string(),
+    assetCode: v.optional(v.string()),
+    description: v.optional(v.string()),
+    category: v.optional(v.string()),
+    assetType: v.optional(v.string()),
+    manufacturer: v.optional(v.string()),
+    model: v.optional(v.string()),
+    serialNumber: v.optional(v.string()),
+    location: v.optional(v.string()),
+    purchaseDate: v.optional(v.string()),
+    purchasePriceCents: v.optional(v.number()),
+    status: v.union(v.literal("ACTIVE"), v.literal("OUT_OF_SERVICE"), v.literal("DISPOSED"), v.literal("ARCHIVED")),
+    notes: v.optional(v.string()),
+    createdBy: v.id("users"),
+    updatedBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    deletedAt: v.optional(v.number()),
+  })
+    .index("by_companyId", ["companyId"])
+    .index("by_siteId", ["siteId"])
+    .index("by_siteId_and_status", ["siteId", "status"])
+    .index("by_siteId_and_serialNumber", ["siteId", "serialNumber"]),
+
+  assetTestAndTagRecords: defineTable({
+    companyId: v.id("companies"), siteId: v.id("sites"), assetId: v.id("assets"),
+    testDate: v.string(), nextTestDueDate: v.optional(v.string()),
+    result: v.union(v.literal("PASS"), v.literal("FAIL"), v.literal("REQUIRES_ACTION")),
+    tagNumber: v.optional(v.string()), testedByName: v.optional(v.string()), testerCompany: v.optional(v.string()), notes: v.optional(v.string()),
+    createdBy: v.id("users"), updatedBy: v.id("users"), createdAt: v.number(), updatedAt: v.number(), deletedAt: v.optional(v.number()),
+  })
+    .index("by_siteId", ["siteId"])
+    .index("by_assetId", ["assetId"])
+    .index("by_assetId_and_testDate", ["assetId", "testDate"]),
+
+  assetMaintenanceRecords: defineTable({
+    companyId: v.id("companies"), siteId: v.id("sites"), assetId: v.id("assets"),
+    maintenanceDate: v.string(),
+    maintenanceType: v.union(v.literal("SERVICE"), v.literal("REPAIR"), v.literal("INSPECTION"), v.literal("PREVENTIVE"), v.literal("OTHER")),
+    description: v.string(), serviceProvider: v.optional(v.string()), technicianName: v.optional(v.string()), costCents: v.optional(v.number()), nextMaintenanceDueDate: v.optional(v.string()),
+    status: v.union(v.literal("COMPLETED"), v.literal("REQUIRES_FOLLOW_UP")), notes: v.optional(v.string()),
+    createdBy: v.id("users"), updatedBy: v.id("users"), createdAt: v.number(), updatedAt: v.number(), deletedAt: v.optional(v.number()),
+  })
+    .index("by_siteId", ["siteId"])
+    .index("by_assetId", ["assetId"])
+    .index("by_assetId_and_maintenanceDate", ["assetId", "maintenanceDate"]),
+
+  assetPhotos: defineTable({
+    companyId: v.id("companies"), siteId: v.id("sites"), assetId: v.id("assets"), storageId: v.id("_storage"),
+    fileName: v.optional(v.string()), caption: v.optional(v.string()), uploadedBy: v.id("users"), createdAt: v.number(), deletedAt: v.optional(v.number()),
+  })
+    .index("by_siteId", ["siteId"])
+    .index("by_assetId", ["assetId"]),
 });

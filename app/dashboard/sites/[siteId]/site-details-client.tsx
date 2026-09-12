@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   UserRound,
   Users,
+  PackageSearch,
 } from "lucide-react";
 
 import { api } from "@/convex/_generated/api";
@@ -108,6 +109,23 @@ export default function SiteDetailsClient() {
             </div>
 
             <div className="flex flex-wrap gap-3">
+              <Button asChild variant="outline" className="gap-2 rounded-xl">
+                <Link href={`/dashboard/sites/${siteId}/assets`}>
+                  <PackageSearch className="size-4" />
+                  View Assets
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="gap-2 rounded-xl"
+              >
+                <Link href={`/dashboard/sites/${siteId}/periodic-planner`}>
+                  <CalendarDays className="size-4" />
+                  Periodic Planner
+                </Link>
+              </Button>
+
               <Button
                 asChild
                 variant="outline"

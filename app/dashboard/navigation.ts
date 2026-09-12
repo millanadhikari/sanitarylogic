@@ -9,6 +9,7 @@ import {
   Users,
   UserRound,
   ListChecks,
+  PackageSearch,
 } from "lucide-react";
 
 export type AppRole =
@@ -51,6 +52,12 @@ export const navigation: NavigationSection[] = [
   {
     title: "Operations",
     items: [
+      {
+        title: "Assets",
+        href: "/dashboard/sites/:siteId/assets",
+        icon: PackageSearch,
+        roles: ["SITE_MANAGER"],
+      },
       {
         title: "Sites",
         href: "/dashboard/sites",

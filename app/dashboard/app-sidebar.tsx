@@ -169,22 +169,28 @@ export default function AppSidebar({
                   <div className="space-y-1">
                     {section.items.map(
                       (item) => {
+                        const href = item.href.includes(":siteId")
+                          ? primarySite
+                            ? item.href.replace(":siteId", primarySite.siteId)
+                            : null
+                          : item.href;
+                        if (!href) return null;
                         const Icon =
                           item.icon;
 
                         const active =
-                          item.href ===
+                          href ===
                           "/dashboard"
                             ? pathname ===
                               "/dashboard"
                             : pathname.startsWith(
-                                item.href,
+                                href,
                               );
 
                         return (
                           <Link
-                            key={item.href}
-                            href={item.href}
+                            key={href}
+                            href={href}
                             onClick={
                               onMobileClose
                             }

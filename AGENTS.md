@@ -691,4 +691,91 @@ be expensive, ask before committing to a structural decision.
 For small implementation details, make a reasonable choice that
 matches existing project patterns.
 
+## Periodic Planner
+
+Periodic Planner is a Site-level operational module.
+
+The Standard Tenancy Scope belongs to the Site and is inherited
+by all active Tenancies at that Site.
+
+Do not duplicate the standard scope definition separately for
+every Tenancy.
+
+The architecture separates:
+
+1. Scope definitions
+2. Schedule rules
+3. Per-tenancy completion records
+
+A single scope item may have multiple schedule rules.
+
+For example, one task may have both DAILY and BI_WEEKLY schedules.
+
+Core tables:
+
+- siteScopeTemplates
+- siteScopeItems
+- siteScopeItemSchedules
+- plannerCompletions
+
+Standard scope categories currently come from the supplied
+Standard Tenancy Clean specification:
+
+- WASTE
+- CARPETED_FLOORS
+- HARD_FLOORS
+- TENANCY_AREA
+- KITCHEN
+
+Supported frequencies:
+
+- DAILY
+- BI_WEEKLY
+- WEEKLY
+- MONTHLY
+- QUARTERLY
+- BI_ANNUAL
+- ANNUAL
+- SITE_DETERMINED
+
+Default completion behaviour:
+
+- DAILY: AUTO
+- BI_WEEKLY: AUTO
+- WEEKLY: AUTO
+- MONTHLY: MANUAL
+- QUARTERLY: MANUAL
+- BI_ANNUAL: MANUAL
+- ANNUAL: MANUAL
+- SITE_DETERMINED: MANUAL
+
+These defaults may later be overridden per schedule.
+
+Do not create millions of future daily occurrence records.
+
+Recurring rules determine what is scheduled.
+
+Store explicit completion/exception records where required.
+
+The planner must support:
+
+- Site-level Standard Scope
+- All-tenancy inheritance
+- Year view
+- Month calendar view
+- List view
+- filtering by Tenancy
+- filtering by category
+- filtering by frequency
+- manual completion for periodic items
+- history foundation
+
+Special Tenancy Scope will be implemented later.
+
+Do not implement Special Scope in Phase 1.
+
+The tenancy Periodic Planner tab will later show inherited
+Standard Scope plus tenant-specific Special Scope.
+
+Do not implement automatic Work Order generation in Phase 1.
 

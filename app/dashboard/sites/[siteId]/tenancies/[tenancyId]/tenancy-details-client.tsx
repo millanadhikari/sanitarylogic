@@ -13,7 +13,6 @@ import {
   ArrowLeft,
   Building2,
   CalendarClock,
-  ChevronRight,
   ClipboardList,
   Layers3,
   Mail,
@@ -226,7 +225,9 @@ export default function TenancyDetailsClient() {
         )}{" "}
         {activeTab === "hazards" && <HazardsTab />}
         {activeTab === "notes" && <NotesTab />}
-        {activeTab === "planner" && <PlannerTab />}
+        {activeTab === "planner" && (
+          <PlannerTab siteId={siteId} tenancyId={tenancyId} />
+        )}
       </div>
     </div>
   );
@@ -781,47 +782,44 @@ function NotesTab() {
   );
 }
 
-function PlannerTab() {
+function PlannerTab({
+  siteId,
+  tenancyId,
+}: {
+  siteId: Id<"sites">;
+  tenancyId: Id<"tenancies">;
+}) {
   return (
-    <ModuleShell
-      label="Planning"
-      title="Periodic Planner"
-      description="Plan recurring cleaning and maintenance activities for this tenancy."
-      buttonLabel="Add Periodic Task"
-      icon={CalendarClock}
-    >
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <PlannerCard
-          title="Carpet Cleaning"
-          frequency="Quarterly"
-          status="Not configured"
-        />
+    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div className="flex flex-col gap-5 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-start gap-4">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <CalendarClock className="size-5" />
+          </span>
 
-        <PlannerCard
-          title="Window Cleaning"
-          frequency="Monthly"
-          status="Not configured"
-        />
+          <div>
+            <p className="label-caps text-muted-foreground">Inherited planning</p>
+            <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+              Standard Tenancy Scope
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              This tenancy inherits the active Standard Scope configured once for
+              the Site. Scope definitions are managed at Site level, while
+              completion records remain specific to this tenancy.
+            </p>
+          </div>
+        </div>
 
-        <PlannerCard
-          title="Floor Maintenance"
-          frequency="Quarterly"
-          status="Not configured"
-        />
-
-        <PlannerCard
-          title="High Dusting"
-          frequency="Biannual"
-          status="Not configured"
-        />
-
-        <PlannerCard
-          title="Deep Clean"
-          frequency="Annual"
-          status="Not configured"
-        />
+        <Button asChild className="shrink-0 gap-2 rounded-xl">
+          <Link
+            href={`/dashboard/sites/${siteId}/periodic-planner?tenancyId=${tenancyId}`}
+          >
+            <CalendarClock className="size-4" />
+            Open Site Planner
+          </Link>
+        </Button>
       </div>
-    </ModuleShell>
+    </section>
   );
 }
 
@@ -883,39 +881,6 @@ function EmptyModule({
       <p className="mt-1 max-w-md text-sm leading-6 text-muted-foreground">
         {description}
       </p>
-    </div>
-  );
-}
-
-function PlannerCard({
-  title,
-  frequency,
-  status,
-}: {
-  title: string;
-  frequency: string;
-  status: string;
-}) {
-  return (
-    <div className="rounded-xl border border-border p-5">
-      <div className="flex items-start justify-between gap-3">
-        <span className="flex size-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-          <ClipboardList className="size-4" />
-        </span>
-
-        <span className="rounded-md bg-muted px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-          {frequency}
-        </span>
-      </div>
-
-      <h3 className="mt-5 font-bold">{title}</h3>
-
-      <p className="mt-1 text-sm text-muted-foreground">{status}</p>
-
-      <button className="mt-5 flex items-center gap-1 text-sm font-semibold text-primary">
-        Configure
-        <ChevronRight className="size-4" />
-      </button>
     </div>
   );
 }
