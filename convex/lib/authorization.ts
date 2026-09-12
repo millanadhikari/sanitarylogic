@@ -187,3 +187,21 @@ export async function requireWorkOrderManagementAccess(
 
   return access;
 }
+
+export async function requireComplaintManagementAccess(
+  ctx: AuthCtx,
+  tenancyId: Id<"tenancies">,
+) {
+  const access = await requireTenancyAccess(ctx, tenancyId);
+
+  if (
+    access.role !== "SUPER_ADMIN" &&
+    access.role !== "AREA_MANAGER" &&
+    access.role !== "SITE_MANAGER" &&
+    access.role !== "SUPERVISOR"
+  ) {
+    throw new Error("You do not have permission to manage complaints");
+  }
+
+  return access;
+}

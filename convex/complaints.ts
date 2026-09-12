@@ -2,7 +2,11 @@ import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
 
-import { requireTenancyAccess, requireUser } from "./lib/authorization";
+import schema from "./schema";
+import {
+  requireComplaintManagementAccess,
+  requireTenancyAccess,
+} from "./lib/authorization";
 
 function cleanOptional(value?: string) {
   const cleaned = value?.trim();
@@ -14,6 +18,7 @@ export const getByTenancy = query({
   args: {
     tenancyId: v.id("tenancies"),
   },
+  returns: v.array(schema.doc("tenancyComplaints")),
 
   handler: async (ctx, args) => {
     await requireTenancyAccess(ctx, args.tenancyId);
@@ -21,11 +26,10 @@ export const getByTenancy = query({
     const complaints = await ctx.db
       .query("tenancyComplaints")
       .withIndex("by_tenancy", (q) => q.eq("tenancyId", args.tenancyId))
-      .collect();
+      .order("desc")
+      .take(200);
 
-    return complaints
-      .filter((complaint) => !complaint.deletedAt)
-      .sort((a, b) => b.createdAt - a.createdAt);
+    return complaints.filter((complaint) => !complaint.deletedAt);
   },
 });
 
@@ -33,6 +37,29 @@ export const getById = query({
   args: {
     complaintId: v.id("tenancyComplaints"),
   },
+  returns: v.union(
+    v.null(),
+    v.object({
+      complaint: schema.doc("tenancyComplaints"),
+      createdBy: v.union(
+        v.null(),
+        v.object({
+          _id: v.id("users"),
+          firstName: v.optional(v.string()),
+          lastName: v.optional(v.string()),
+          email: v.optional(v.string()),
+        }),
+      ),
+      sourceWorkOrder: v.union(
+        v.null(),
+        v.object({
+          _id: v.id("workOrders"),
+          workOrderNumber: v.string(),
+          title: v.string(),
+        }),
+      ),
+    }),
+  ),
 
   handler: async (ctx, args) => {
     const complaint = await ctx.db.get(args.complaintId);
@@ -64,7 +91,11 @@ export const getById = query({
         : null,
 
       sourceWorkOrder:
-        sourceWorkOrder && !sourceWorkOrder.deletedAt
+        sourceWorkOrder &&
+        !sourceWorkOrder.deletedAt &&
+        sourceWorkOrder.companyId === complaint.companyId &&
+        sourceWorkOrder.siteId === complaint.siteId &&
+        sourceWorkOrder.tenancyId === complaint.tenancyId
           ? {
               _id: sourceWorkOrder._id,
               workOrderNumber: sourceWorkOrder.workOrderNumber,
@@ -94,17 +125,11 @@ export const create = mutation({
       v.literal("URGENT"),
     ),
   },
+  returns: v.id("tenancyComplaints"),
 
   handler: async (ctx, args) => {
-    const user = await requireUser(ctx);
-
-    await requireTenancyAccess(ctx, args.tenancyId);
-
-    const tenancy = await ctx.db.get(args.tenancyId);
-
-    if (!tenancy) {
-      throw new Error("Tenancy not found");
-    }
+    const access = await requireComplaintManagementAccess(ctx, args.tenancyId);
+    const { tenancy, user } = access;
 
     if (!args.title.trim()) {
       throw new Error("Complaint title is required");
@@ -172,6 +197,7 @@ export const update = mutation({
       v.literal("URGENT"),
     ),
   },
+  returns: v.null(),
 
   handler: async (ctx, args) => {
     const complaint = await ctx.db.get(args.complaintId);
@@ -180,7 +206,7 @@ export const update = mutation({
       throw new Error("Complaint not found");
     }
 
-    await requireTenancyAccess(ctx, complaint.tenancyId);
+    await requireComplaintManagementAccess(ctx, complaint.tenancyId);
 
     if (!args.title.trim()) {
       throw new Error("Complaint title is required");
@@ -201,6 +227,8 @@ export const update = mutation({
 
       updatedAt: Date.now(),
     });
+
+    return null;
   },
 });
 
@@ -215,6 +243,7 @@ export const setStatus = mutation({
       v.literal("CLOSED"),
     ),
   },
+  returns: v.null(),
 
   handler: async (ctx, args) => {
     const complaint = await ctx.db.get(args.complaintId);
@@ -223,7 +252,7 @@ export const setStatus = mutation({
       throw new Error("Complaint not found");
     }
 
-    await requireTenancyAccess(ctx, complaint.tenancyId);
+    await requireComplaintManagementAccess(ctx, complaint.tenancyId);
 
     const now = Date.now();
 
@@ -237,6 +266,8 @@ export const setStatus = mutation({
 
       updatedAt: now,
     });
+
+    return null;
   },
 });
 
@@ -244,6 +275,7 @@ export const remove = mutation({
   args: {
     complaintId: v.id("tenancyComplaints"),
   },
+  returns: v.object({ success: v.boolean() }),
 
   handler: async (ctx, args) => {
     const complaint = await ctx.db.get(args.complaintId);
@@ -252,7 +284,7 @@ export const remove = mutation({
       throw new Error("Complaint not found");
     }
 
-    await requireTenancyAccess(ctx, complaint.tenancyId);
+    await requireComplaintManagementAccess(ctx, complaint.tenancyId);
 
     const now = Date.now();
 

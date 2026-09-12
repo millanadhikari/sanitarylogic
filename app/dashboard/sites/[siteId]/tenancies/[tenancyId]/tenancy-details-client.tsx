@@ -15,7 +15,6 @@ import {
   CalendarClock,
   ChevronRight,
   ClipboardList,
-  FileWarning,
   Layers3,
   Mail,
   MapPin,
@@ -24,10 +23,8 @@ import {
   Phone,
   ShieldAlert,
   UserRound,
-  CalendarDays,
   Copy,
   DollarSign,
-  MoreHorizontal,
   Pencil,
   Plus,
   Trash2,
@@ -210,7 +207,12 @@ export default function TenancyDetailsClient() {
         {activeTab === "areas" && (
           <AreasTab tenancyId={tenancyId} canManage={canManage} />
         )}
-        {activeTab === "complaints" && <ComplaintsTab tenancyId={tenancyId} />}
+        {activeTab === "complaints" && (
+          <ComplaintsTab
+            tenancyId={tenancyId}
+            canManage={role !== "CLEANER"}
+          />
+        )}
         {activeTab === "work-orders" && (
           <WorkOrdersTab
             tenancyId={tenancyId}
@@ -337,7 +339,13 @@ type ComplaintStatus = "ALL" | "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
 
 type ComplaintPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 
-function ComplaintsTab({ tenancyId }: { tenancyId: Id<"tenancies"> }) {
+function ComplaintsTab({
+  tenancyId,
+  canManage,
+}: {
+  tenancyId: Id<"tenancies">;
+  canManage: boolean;
+}) {
   const complaints = useQuery(api.complaints.getByTenancy, {
     tenancyId,
   });
@@ -432,16 +440,18 @@ function ComplaintsTab({ tenancyId }: { tenancyId: Id<"tenancies"> }) {
             </p>
           </div>
 
-          <Button
-            onClick={() => {
-              setEditingComplaint(null);
-              setShowModal(true);
-            }}
-            className="gap-2 rounded-xl"
-          >
-            <Plus className="size-4" />
-            Add Complaint
-          </Button>
+          {canManage && (
+            <Button
+              onClick={() => {
+                setEditingComplaint(null);
+                setShowModal(true);
+              }}
+              className="gap-2 rounded-xl"
+            >
+              <Plus className="size-4" />
+              Add Complaint
+            </Button>
+          )}
         </div>
 
         {/* Metrics */}
@@ -513,6 +523,7 @@ function ComplaintsTab({ tenancyId }: { tenancyId: Id<"tenancies"> }) {
               <ComplaintRow
                 key={complaint._id}
                 complaint={complaint}
+                canManage={canManage}
                 onStatusChange={updateStatus}
                 onOpen={() => setSelectedComplaintId(complaint._id)}
               />
@@ -524,6 +535,7 @@ function ComplaintsTab({ tenancyId }: { tenancyId: Id<"tenancies"> }) {
       {selectedComplaintId && (
         <ComplaintDetailsModal
           complaintId={selectedComplaintId}
+          canManage={canManage}
           onClose={() => {
             setSelectedComplaintId(null);
           }}
@@ -573,45 +585,18 @@ function ComplaintsTab({ tenancyId }: { tenancyId: Id<"tenancies"> }) {
           onUpdate={updateComplaint}
         />
       )}
-      {showModal && (
-        <ComplaintFormModal
-          tenancyId={tenancyId}
-          complaint={editingComplaint}
-          onClose={() => {
-            setShowModal(false);
-            setEditingComplaint(null);
-          }}
-          onCreate={createComplaint}
-          onUpdate={updateComplaint}
-        />
-      )}
-
-      {selectedComplaintId && (
-        <ComplaintDetailsModal
-          complaintId={selectedComplaintId}
-          onClose={() => setSelectedComplaintId(null)}
-          onEdit={(complaint) => {
-            setEditingComplaint(complaint);
-
-            setSelectedComplaintId(null);
-
-            setShowModal(true);
-          }}
-          onDelete={async (complaint) => {
-            // keep your existing delete code
-          }}
-        />
-      )}
     </>
   );
 }
 
 function ComplaintRow({
   complaint,
+  canManage,
   onStatusChange,
   onOpen,
 }: {
   complaint: Doc<"tenancyComplaints">;
+  canManage: boolean;
 
   onStatusChange: (
     id: Id<"tenancyComplaints">,
@@ -662,25 +647,27 @@ function ComplaintRow({
           </div>
         </div>
 
-        <select
-          value={complaint.status}
-          onChange={(event) =>
-            onStatusChange(
-              complaint._id,
-              event.target.value as
-                "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED",
-            )
-          }
-          className="h-9 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none"
-        >
-          <option value="OPEN">Open</option>
+        {canManage && (
+          <select
+            value={complaint.status}
+            onChange={(event) =>
+              onStatusChange(
+                complaint._id,
+                event.target.value as
+                  "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED",
+              )
+            }
+            className="h-9 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none"
+          >
+            <option value="OPEN">Open</option>
 
-          <option value="IN_PROGRESS">In Progress</option>
+            <option value="IN_PROGRESS">In Progress</option>
 
-          <option value="RESOLVED">Resolved</option>
+            <option value="RESOLVED">Resolved</option>
 
-          <option value="CLOSED">Closed</option>
-        </select>
+            <option value="CLOSED">Closed</option>
+          </select>
+        )}
       </div>
     </div>
   );
@@ -758,24 +745,6 @@ function formatDate(timestamp: number) {
     year: "numeric",
   }).format(new Date(timestamp));
 }
-function IssuesTab() {
-  return (
-    <ModuleShell
-      label="Operations"
-      title="Issues"
-      description="Track operational issues requiring investigation or follow-up."
-      buttonLabel="Report Issue"
-      icon={AlertTriangle}
-    >
-      <EmptyModule
-        icon={AlertTriangle}
-        title="No open issues"
-        description="Operational issues reported for this tenancy will appear here."
-      />
-    </ModuleShell>
-  );
-}
-
 function HazardsTab() {
   return (
     <ModuleShell
@@ -1028,34 +997,6 @@ function TabButton({
     >
       {children}
     </button>
-  );
-}
-
-function ModulePlaceholder({
-  icon: Icon,
-  title,
-  description,
-  buttonLabel,
-}: {
-  icon: typeof Building2;
-  title: string;
-  description: string;
-  buttonLabel: string;
-}) {
-  return (
-    <ModuleShell
-      label="Tenancy Management"
-      title={title}
-      description={description}
-      buttonLabel={buttonLabel}
-      icon={Icon}
-    >
-      <EmptyModule
-        icon={Icon}
-        title={`No ${title.toLowerCase()} yet`}
-        description={`Items added to ${title.toLowerCase()} will appear here.`}
-      />
-    </ModuleShell>
   );
 }
 
@@ -2770,11 +2711,13 @@ function WorkOrderComplaintModal({
 }
 function ComplaintDetailsModal({
   complaintId,
+  canManage,
   onClose,
   onEdit,
   onDelete,
 }: {
   complaintId: Id<"tenancyComplaints">;
+  canManage: boolean;
 
   onClose: () => void;
 
@@ -2973,7 +2916,7 @@ function ComplaintDetailsModal({
                     </p>
                   </div>
                 ) : (
-                  comments.map((item: any) => {
+                  comments.map((item) => {
                     const name =
                       [item.author?.firstName, item.author?.lastName]
                         .filter(Boolean)
@@ -3001,14 +2944,16 @@ function ComplaintDetailsModal({
                                 </p>
                               </div>
 
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteComment(item._id)}
-                                title="Delete comment"
-                                className="rounded-md p-1.5 text-muted-foreground hover:bg-background hover:text-destructive"
-                              >
-                                <Trash2 className="size-3.5" />
-                              </button>
+                              {item.canDelete && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteComment(item._id)}
+                                  title="Delete comment"
+                                  className="rounded-md p-1.5 text-muted-foreground hover:bg-background hover:text-destructive"
+                                >
+                                  <Trash2 className="size-3.5" />
+                                </button>
+                              )}
                             </div>
 
                             <p className="mt-3 whitespace-pre-wrap text-sm leading-6">
@@ -3066,60 +3011,54 @@ function ComplaintDetailsModal({
               )}
             </div>
 
-            <div className="mt-7 border-t border-border pt-6">
-              <FormField label="Status">
-                <select
-                  value={complaint.status}
-                  onChange={(event) =>
-                    handleStatusChange(
-                      event.target.value as
-                        "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED",
-                    )
-                  }
-                  className="form-input"
+            {canManage && (
+              <div className="mt-7 border-t border-border pt-6">
+                <FormField label="Status">
+                  <select
+                    value={complaint.status}
+                    onChange={(event) =>
+                      handleStatusChange(
+                        event.target.value as
+                          "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED",
+                      )
+                    }
+                    className="form-input"
+                  >
+                    <option value="OPEN">Open</option>
+
+                    <option value="IN_PROGRESS">In Progress</option>
+
+                    <option value="RESOLVED">Resolved</option>
+
+                    <option value="CLOSED">Closed</option>
+                  </select>
+                </FormField>
+              </div>
+            )}
+
+            {canManage && (
+              <div className="mt-6 grid gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onEdit(complaint)}
+                  className="justify-start gap-2"
                 >
-                  <option value="OPEN">Open</option>
+                  <Pencil className="size-4" />
+                  Edit Complaint
+                </Button>
 
-                  <option value="IN_PROGRESS">In Progress</option>
-
-                  <option value="RESOLVED">Resolved</option>
-
-                  <option value="CLOSED">Closed</option>
-                </select>
-              </FormField>
-            </div>
-
-            <div className="mt-6 grid gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onEdit(complaint)}
-                className="justify-start gap-2"
-              >
-                <Pencil className="size-4" />
-                Edit Complaint
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  const confirmed = window.confirm(
-                    `Are you sure you want to delete "${complaint.title}"?`,
-                  );
-
-                  if (!confirmed) {
-                    return;
-                  }
-
-                  onDelete(complaint);
-                }}
-                className="justify-start gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              >
-                <Trash2 className="size-4" />
-                Delete Complaint
-              </Button>
-            </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onDelete(complaint)}
+                  className="justify-start gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="size-4" />
+                  Delete Complaint
+                </Button>
+              </div>
+            )}
           </aside>
         </div>
       </div>

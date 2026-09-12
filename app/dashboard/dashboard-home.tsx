@@ -42,7 +42,7 @@ export default function DashboardHome() {
       return <CleanerDashboard />;
 
     default:
-      return <div className="p-8">Unknown role:</div>;
+      return <div className="p-8">Unknown role: </div>;
   }
 }
 
