@@ -473,7 +473,7 @@ function ComplaintsTab({
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search complaints..."
-              className="form-input pl-9"
+              className="form-input search-input"
             />
           </div>
 
@@ -1702,7 +1702,7 @@ function WorkOrdersTab({
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search WO number, title, description or notes..."
-                className="form-input pl-9"
+                className="form-input search-input"
               />
             </div>
 
@@ -2083,7 +2083,7 @@ function WorkOrderModal({
                       }))
                     }
                     placeholder="385.00"
-                    className="form-input pl-9"
+                    className="form-input search-input"
                   />
                 </div>
               </FormField>

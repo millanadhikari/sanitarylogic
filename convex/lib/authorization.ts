@@ -258,3 +258,48 @@ export async function requireAssetOperationsAccess(ctx: AuthCtx, siteId: Id<"sit
   if (access.role === "CLEANER") throw new Error("You do not have permission to manage asset records");
   return access;
 }
+
+export async function requireEmployeeSiteManagementAccess(
+  ctx: AuthCtx,
+  siteId: Id<"sites">,
+) {
+  const access = await requireSiteAccess(ctx, siteId);
+  if (
+    access.role !== "SUPER_ADMIN" &&
+    access.role !== "AREA_MANAGER" &&
+    access.role !== "SITE_MANAGER"
+  ) {
+    throw new Error("You do not have permission to manage employees at this site");
+  }
+  return access;
+}
+
+export async function requireSiteContactManagementAccess(
+  ctx: AuthCtx,
+  siteId: Id<"sites">,
+) {
+  const access = await requireSiteAccess(ctx, siteId);
+  if (
+    access.role !== "SUPER_ADMIN" &&
+    access.role !== "AREA_MANAGER" &&
+    access.role !== "SITE_MANAGER"
+  ) {
+    throw new Error("You do not have permission to manage site contacts");
+  }
+  return access;
+}
+
+export async function requireSiteDocumentManagementAccess(
+  ctx: AuthCtx,
+  siteId: Id<"sites">,
+) {
+  const access = await requireSiteAccess(ctx, siteId);
+  if (
+    access.role !== "SUPER_ADMIN" &&
+    access.role !== "AREA_MANAGER" &&
+    access.role !== "SITE_MANAGER"
+  ) {
+    throw new Error("You do not have permission to manage site documents");
+  }
+  return access;
+}

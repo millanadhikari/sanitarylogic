@@ -161,6 +161,9 @@
    .form-input {
   @apply h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20;
 }
+  .search-input {
+    padding-inline-start: 2.5rem;
+  }
   .grid-canvas {
     background-image:
       linear-gradient(

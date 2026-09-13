@@ -334,7 +334,7 @@ export default function TenanciesClient() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search tenancies..."
-                  className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
+                  className="search-input h-10 w-full rounded-lg border border-border bg-background pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
                 />
               </div>
 

@@ -10,11 +10,9 @@ import {
   Building2,
   CalendarDays,
   ClipboardCheck,
-  Mail,
+  FileText,
   MapPin,
-  Phone,
   ShieldCheck,
-  UserRound,
   Users,
   PackageSearch,
 } from "lucide-react";
@@ -22,6 +20,8 @@ import {
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
+import { SiteTeamPanel } from "@/components/team/site-team-panel";
+import { SiteContactDirectory } from "@/components/sites/site-contact-directory";
 
 export default function SiteDetailsClient() {
   const params = useParams<{
@@ -115,6 +115,12 @@ export default function SiteDetailsClient() {
                   View Assets
                 </Link>
               </Button>
+              <Button asChild variant="outline" className="gap-2 rounded-xl">
+                <Link href={`/dashboard/sites/${siteId}/documents`}>
+                  <FileText className="size-4" />
+                  View Documents
+                </Link>
+              </Button>
               <Button
                 asChild
                 variant="outline"
@@ -168,8 +174,8 @@ export default function SiteDetailsClient() {
 
         <MetricCard
           label="Site Contacts"
-          value="—"
-          description="Contact directory coming next"
+          value="Managed"
+          description="Contact directory available below"
           icon={Users}
         />
 
@@ -187,6 +193,8 @@ export default function SiteDetailsClient() {
           icon={ShieldCheck}
         />
       </section>
+
+      <SiteTeamPanel siteId={siteId} />
 
       {/* ==================================================
           SITE INFORMATION / CONTACTS
@@ -256,56 +264,7 @@ export default function SiteDetailsClient() {
           </div>
         </section>
 
-        {/* Site Contacts */}
-        <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-          <div className="flex items-center justify-between gap-4 border-b border-border px-6 py-5">
-            <div>
-              <p className="label-caps text-muted-foreground">
-                Contacts
-              </p>
-
-              <h2 className="mt-1 text-xl font-extrabold tracking-tight">
-                Site Contact Directory
-              </h2>
-
-              <p className="mt-1 text-sm text-muted-foreground">
-                Key building and property
-                contacts for this site.
-              </p>
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl"
-              disabled
-            >
-              Add Contact
-            </Button>
-          </div>
-
-          <div className="divide-y divide-border">
-            <ContactPlaceholder
-              title="Property Manager"
-              description="Primary property management contact."
-            />
-
-            <ContactPlaceholder
-              title="Facilities Coordinator"
-              description="Facilities and maintenance coordination."
-            />
-
-            <ContactPlaceholder
-              title="Security Manager"
-              description="Security, access and incident contact."
-            />
-
-            <ContactPlaceholder
-              title="Building Manager"
-              description="General building operations contact."
-            />
-          </div>
-        </section>
+        <SiteContactDirectory siteId={siteId} />
       </div>
 
       {/* ==================================================
@@ -435,59 +394,8 @@ export default function SiteDetailsClient() {
               description="Building access and service hours."
             />
 
-            <FutureFeature
-              icon={Building2}
-              title="Site Documents"
-              description="Plans, procedures and site-specific documentation."
-            />
           </div>
         </section>
-      </div>
-    </div>
-  );
-}
-
-/* ======================================================
-   CONTACT PLACEHOLDER
-====================================================== */
-
-function ContactPlaceholder({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="flex items-center gap-4 px-6 py-5">
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        <UserRound className="size-5" />
-      </span>
-
-      <div className="min-w-0 flex-1">
-        <p className="font-bold">
-          {title}
-        </p>
-
-        <p className="mt-1 text-sm text-muted-foreground">
-          {description}
-        </p>
-      </div>
-
-      <div className="hidden items-center gap-1 sm:flex">
-        <button
-          disabled
-          className="rounded-lg p-2 text-muted-foreground opacity-40"
-        >
-          <Mail className="size-4" />
-        </button>
-
-        <button
-          disabled
-          className="rounded-lg p-2 text-muted-foreground opacity-40"
-        >
-          <Phone className="size-4" />
-        </button>
       </div>
     </div>
   );

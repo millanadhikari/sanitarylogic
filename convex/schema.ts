@@ -164,6 +164,151 @@ export default defineSchema({
     .index("by_user_and_site", ["userId", "siteId"])
     .index("by_site_and_role", ["siteId", "role"]),
 
+  employees: defineTable({
+    companyId: v.id("companies"),
+    userId: v.optional(v.id("users")),
+    employeeNumber: v.optional(v.string()),
+    firstName: v.string(),
+    lastName: v.string(),
+    email: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    jobTitle: v.optional(v.string()),
+    employmentType: v.union(
+      v.literal("FULL_TIME"),
+      v.literal("PART_TIME"),
+      v.literal("CASUAL"),
+      v.literal("CONTRACTOR"),
+    ),
+    startDate: v.optional(v.number()),
+    emergencyContactName: v.optional(v.string()),
+    emergencyContactPhone: v.optional(v.string()),
+    emergencyContactRelationship: v.optional(v.string()),
+    address: v.optional(v.string()),
+    suburb: v.optional(v.string()),
+    state: v.optional(v.string()),
+    postcode: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    profileImageStorageId: v.optional(v.id("_storage")),
+    status: v.union(
+      v.literal("ACTIVE"),
+      v.literal("INACTIVE"),
+      v.literal("TERMINATED"),
+    ),
+    createdBy: v.id("users"),
+    deletedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_company", ["companyId"])
+    .index("by_company_and_status", ["companyId", "status"])
+    .index("by_user", ["userId"])
+    .index("by_company_and_employeeNumber", ["companyId", "employeeNumber"])
+    .index("by_company_and_email", ["companyId", "email"]),
+
+  employeeSiteAssignments: defineTable({
+    companyId: v.id("companies"),
+    siteId: v.id("sites"),
+    employeeId: v.id("employees"),
+    assignmentRole: v.union(
+      v.literal("CLEANER"),
+      v.literal("SUPERVISOR"),
+      v.literal("OTHER"),
+    ),
+    isPrimarySite: v.boolean(),
+    status: activeStatus,
+    assignedAt: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_site", ["siteId"])
+    .index("by_employee", ["employeeId"])
+    .index("by_employee_and_site", ["employeeId", "siteId"])
+    .index("by_company", ["companyId"]),
+
+  onboardingTemplates: defineTable({
+    companyId: v.id("companies"),
+    name: v.string(),
+    description: v.optional(v.string()),
+    status: activeStatus,
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_company", ["companyId"]),
+
+  siteContacts: defineTable({
+    companyId: v.id("companies"),
+    siteId: v.id("sites"),
+    name: v.string(),
+    jobTitle: v.optional(v.string()),
+    organisation: v.optional(v.string()),
+    email: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    createdBy: v.id("users"),
+    updatedBy: v.id("users"),
+    deletedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_site", ["siteId"])
+    .index("by_company", ["companyId"]),
+
+  siteDocuments: defineTable({
+    companyId: v.id("companies"),
+    siteId: v.id("sites"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    storageId: v.id("_storage"),
+    fileName: v.string(),
+    contentType: v.optional(v.string()),
+    fileSize: v.number(),
+    uploadedBy: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_site", ["siteId"])
+    .index("by_company", ["companyId"]),
+
+  onboardingTemplateItems: defineTable({
+    companyId: v.id("companies"),
+    templateId: v.id("onboardingTemplates"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    sortOrder: v.number(),
+    required: v.boolean(),
+    status: activeStatus,
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_template", ["templateId"])
+    .index("by_company", ["companyId"]),
+
+  employeeOnboardingItems: defineTable({
+    companyId: v.id("companies"),
+    employeeId: v.id("employees"),
+    templateId: v.id("onboardingTemplates"),
+    templateItemId: v.id("onboardingTemplateItems"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    sortOrder: v.number(),
+    required: v.boolean(),
+    status: v.union(
+      v.literal("PENDING"),
+      v.literal("COMPLETED"),
+      v.literal("NOT_APPLICABLE"),
+    ),
+    completedAt: v.optional(v.number()),
+    completedBy: v.optional(v.id("users")),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_employee", ["employeeId"])
+    .index("by_template", ["templateId"])
+    .index("by_employee_and_template", ["employeeId", "templateId"])
+    .index("by_templateItem", ["templateItemId"])
+    .index("by_employee_and_templateItem", ["employeeId", "templateItemId"])
+    .index("by_company", ["companyId"]),
+
   invitations: defineTable({
     companyId: v.id("companies"),
 
