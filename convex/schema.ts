@@ -225,6 +225,176 @@ export default defineSchema({
     .index("by_employee_and_site", ["employeeId", "siteId"])
     .index("by_company", ["companyId"]),
 
+  employeeShiftPatterns: defineTable({
+    companyId: v.id("companies"),
+    siteId: v.id("sites"),
+    employeeId: v.id("employees"),
+    patternSetKey: v.string(),
+    name: v.optional(v.string()),
+    shiftType: v.union(
+      v.literal("DAY"),
+      v.literal("NIGHT"),
+      v.literal("OTHER"),
+    ),
+    dayOfWeek: plannerWeekday,
+    startTime: v.string(),
+    endTime: v.string(),
+    breakMinutes: v.number(),
+    effectiveFrom: v.string(),
+    effectiveTo: v.optional(v.string()),
+    status: activeStatus,
+    createdBy: v.id("users"),
+    updatedBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_site", ["siteId"])
+    .index("by_employee", ["employeeId"])
+    .index("by_site_and_status", ["siteId", "status"])
+    .index("by_employee_and_status", ["employeeId", "status"])
+    .index("by_site_and_patternSetKey", ["siteId", "patternSetKey"]),
+
+  rosterShifts: defineTable({
+    companyId: v.id("companies"),
+    siteId: v.id("sites"),
+    employeeId: v.id("employees"),
+    workDate: v.string(),
+    startTime: v.string(),
+    endTime: v.string(),
+    breakMinutes: v.number(),
+    shiftType: v.union(
+      v.literal("DAY"),
+      v.literal("NIGHT"),
+      v.literal("OTHER"),
+    ),
+    shiftSource: v.union(
+      v.literal("CASUAL"),
+      v.literal("ADDITIONAL"),
+      v.literal("REPLACEMENT"),
+      v.literal("OVERRIDE"),
+    ),
+    relatedPatternId: v.optional(v.id("employeeShiftPatterns")),
+    replacesEmployeeId: v.optional(v.id("employees")),
+    reason: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    status: v.union(v.literal("SCHEDULED"), v.literal("CANCELLED")),
+    createdBy: v.id("users"),
+    updatedBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_site", ["siteId"])
+    .index("by_site_and_workDate", ["siteId", "workDate"])
+    .index("by_employee_and_workDate", ["employeeId", "workDate"])
+    .index("by_relatedPattern_and_workDate", ["relatedPatternId", "workDate"])
+    .index("by_site_and_status", ["siteId", "status"]),
+
+  siteTimesheetSettings: defineTable({
+    companyId: v.id("companies"),
+    siteId: v.id("sites"),
+    periodType: v.union(
+      v.literal("WEEKLY"),
+      v.literal("FORTNIGHTLY"),
+      v.literal("MONTHLY"),
+    ),
+    weekStartsOn: plannerWeekday,
+    fortnightAnchorDate: v.optional(v.string()),
+    status: activeStatus,
+    createdBy: v.id("users"),
+    updatedBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_site", ["siteId"])
+    .index("by_company", ["companyId"]),
+
+  employeeTimesheets: defineTable({
+    companyId: v.id("companies"),
+    siteId: v.id("sites"),
+    employeeId: v.id("employees"),
+    periodType: v.union(
+      v.literal("WEEKLY"),
+      v.literal("FORTNIGHTLY"),
+      v.literal("MONTHLY"),
+    ),
+    periodStart: v.string(),
+    periodEnd: v.string(),
+    status: v.union(
+      v.literal("DRAFT"),
+      v.literal("SUBMITTED"),
+      v.literal("APPROVED"),
+      v.literal("REJECTED"),
+    ),
+    submittedAt: v.optional(v.number()),
+    submittedBy: v.optional(v.id("users")),
+    approvedAt: v.optional(v.number()),
+    approvedBy: v.optional(v.id("users")),
+    rejectedAt: v.optional(v.number()),
+    rejectedBy: v.optional(v.id("users")),
+    rejectionReason: v.optional(v.string()),
+    reopenedAt: v.optional(v.number()),
+    reopenedBy: v.optional(v.id("users")),
+    notes: v.optional(v.string()),
+    createdBy: v.id("users"),
+    updatedBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_site_and_period", ["siteId", "periodStart", "periodEnd"])
+    .index("by_employee", ["employeeId"])
+    .index("by_employee_and_period", ["employeeId", "siteId", "periodStart", "periodEnd"])
+    .index("by_site_and_status", ["siteId", "status"]),
+
+  timesheetEntries: defineTable({
+    companyId: v.id("companies"),
+    siteId: v.id("sites"),
+    employeeId: v.id("employees"),
+    timesheetId: v.id("employeeTimesheets"),
+    workDate: v.string(),
+    sourceKey: v.string(),
+    sourceType: v.union(
+      v.literal("PERMANENT_PATTERN"),
+      v.literal("ROSTER_SHIFT"),
+      v.literal("UNSCHEDULED"),
+    ),
+    sourcePatternId: v.optional(v.id("employeeShiftPatterns")),
+    sourceRosterShiftId: v.optional(v.id("rosterShifts")),
+    shiftType: v.optional(v.union(
+      v.literal("DAY"),
+      v.literal("NIGHT"),
+      v.literal("OTHER"),
+    )),
+    scheduledStart: v.optional(v.string()),
+    scheduledEnd: v.optional(v.string()),
+    scheduledBreakMinutes: v.optional(v.number()),
+    scheduledMinutes: v.optional(v.number()),
+    actualStart: v.optional(v.string()),
+    actualEnd: v.optional(v.string()),
+    actualBreakMinutes: v.optional(v.number()),
+    actualMinutes: v.optional(v.number()),
+    varianceMinutes: v.optional(v.number()),
+    attendanceType: v.union(
+      v.literal("WORKED"),
+      v.literal("SICK_LEAVE"),
+      v.literal("ANNUAL_LEAVE"),
+      v.literal("PERSONAL_LEAVE"),
+      v.literal("LEAVE_WITHOUT_PAY"),
+      v.literal("ABSENT"),
+    ),
+    replacementEmployeeId: v.optional(v.id("employees")),
+    replacementRosterShiftId: v.optional(v.id("rosterShifts")),
+    leaveNotes: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    createdBy: v.id("users"),
+    updatedBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_timesheet", ["timesheetId"])
+    .index("by_timesheet_and_sourceKey", ["timesheetId", "sourceKey"])
+    .index("by_employee_and_workDate", ["employeeId", "workDate"])
+    .index("by_site_and_workDate", ["siteId", "workDate"]),
+
   onboardingTemplates: defineTable({
     companyId: v.id("companies"),
     name: v.string(),

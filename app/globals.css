@@ -207,4 +207,50 @@
       0 1px 2px rgb(0 0 0 / 0.03),
       0 8px 30px rgb(0 0 0 / 0.06);
   }
+
+  .marketing-grid {
+    background-image:
+      linear-gradient(to right, rgb(15 118 110 / 0.055) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(15 118 110 / 0.055) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: linear-gradient(to bottom, black 15%, transparent 92%);
+  }
+
+  .marketing-grid-dark {
+    background-image:
+      linear-gradient(to right, rgb(52 211 153 / 0.12) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(52 211 153 / 0.12) 1px, transparent 1px);
+    background-size: 36px 36px;
+    mask-image: radial-gradient(circle at center, black, transparent 76%);
+  }
+
+  .marketing-reveal {
+    animation: marketing-rise 650ms ease-out both;
+  }
+
+  .marketing-reveal-delay {
+    animation-delay: 120ms;
+  }
+}
+
+@keyframes marketing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-page *,
+  .marketing-page *::before,
+  .marketing-page *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

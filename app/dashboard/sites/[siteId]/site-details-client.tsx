@@ -9,6 +9,8 @@ import {
   ArrowRight,
   Building2,
   CalendarDays,
+  CalendarRange,
+  Timer,
   ClipboardCheck,
   FileText,
   MapPin,
@@ -121,6 +123,22 @@ export default function SiteDetailsClient() {
                   View Documents
                 </Link>
               </Button>
+              {siteData.role !== "CLEANER" && (
+                <Button asChild variant="outline" className="gap-2 rounded-xl">
+                  <Link href={`/dashboard/sites/${siteId}/roster`}>
+                    <CalendarRange className="size-4" />
+                    View Roster
+                  </Link>
+                </Button>
+              )}
+              {siteData.role !== "CLEANER" && (
+                <Button asChild variant="outline" className="gap-2 rounded-xl">
+                  <Link href={`/dashboard/sites/${siteId}/timesheets`}>
+                    <Timer className="size-4" />
+                    View Timesheets
+                  </Link>
+                </Button>
+              )}
               <Button
                 asChild
                 variant="outline"

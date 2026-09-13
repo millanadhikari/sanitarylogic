@@ -10,6 +10,8 @@ import {
   UserRound,
   ListChecks,
   PackageSearch,
+  CalendarRange,
+  Timer,
 } from "lucide-react";
 
 export type AppRole =
@@ -56,6 +58,18 @@ export const navigation: NavigationSection[] = [
         title: "Assets",
         href: "/dashboard/sites/:siteId/assets",
         icon: PackageSearch,
+        roles: ["SITE_MANAGER"],
+      },
+      {
+        title: "Roster",
+        href: "/dashboard/sites/:siteId/roster",
+        icon: CalendarRange,
+        roles: ["SITE_MANAGER"],
+      },
+      {
+        title: "Timesheets",
+        href: "/dashboard/sites/:siteId/timesheets",
+        icon: Timer,
         roles: ["SITE_MANAGER"],
       },
       {
