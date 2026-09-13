@@ -15,8 +15,24 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
+import { EmployeeDirectory } from "@/components/team/employee-directory";
 
 export default function TeamClient() {
+  const [view, setView] = useState<"MANAGEMENT" | "EMPLOYEES">("EMPLOYEES");
+  return (
+    <div>
+      <div className="mx-auto max-w-[1400px] px-4 pt-8 sm:px-8">
+        <div className="inline-flex rounded-xl border bg-card p-1">
+          <button onClick={() => setView("EMPLOYEES")} className={`rounded-lg px-4 py-2 text-sm font-bold ${view === "EMPLOYEES" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>Employees / Cleaners</button>
+          <button onClick={() => setView("MANAGEMENT")} className={`rounded-lg px-4 py-2 text-sm font-bold ${view === "MANAGEMENT" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>Management Users</button>
+        </div>
+      </div>
+      {view === "EMPLOYEES" ? <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-8"><EmployeeDirectory /></div> : <ManagementTeam />}
+    </div>
+  );
+}
+
+function ManagementTeam() {
   type InviteRole = "AREA_MANAGER" | "SITE_MANAGER" | "SUPERVISOR" | "CLEANER";
 
   const [inviteForm, setInviteForm] = useState<{
@@ -205,7 +221,7 @@ export default function TeamClient() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search team..."
-              className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
+              className="search-input h-10 w-full rounded-lg border border-border bg-background pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
             />
           </div>
         </div>
