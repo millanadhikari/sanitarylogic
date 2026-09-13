@@ -303,3 +303,64 @@ export async function requireSiteDocumentManagementAccess(
   }
   return access;
 }
+
+export async function requireRosterReadAccess(
+  ctx: AuthCtx,
+  siteId: Id<"sites">,
+) {
+  const access = await requireSiteAccess(ctx, siteId);
+  const role = access.role;
+  if (role === "CLEANER") {
+    throw new Error("You do not have permission to view the roster");
+  }
+  return { ...access, role };
+}
+
+export async function requireRosterManagementAccess(
+  ctx: AuthCtx,
+  siteId: Id<"sites">,
+) {
+  const access = await requireRosterReadAccess(ctx, siteId);
+  if (
+    access.role !== "SUPER_ADMIN" &&
+    access.role !== "AREA_MANAGER" &&
+    access.role !== "SITE_MANAGER"
+  ) {
+    throw new Error("You do not have permission to manage this roster");
+  }
+  return access;
+}
+
+export async function requireTimesheetReadAccess(
+  ctx: AuthCtx,
+  siteId: Id<"sites">,
+) {
+  const access = await requireSiteAccess(ctx, siteId);
+  const role = access.role;
+  if (role === "CLEANER") {
+    throw new Error("You do not have permission to view timesheets");
+  }
+  return { ...access, role };
+}
+
+export async function requireTimesheetManagementAccess(
+  ctx: AuthCtx,
+  siteId: Id<"sites">,
+) {
+  const access = await requireTimesheetReadAccess(ctx, siteId);
+  if (access.role === "SUPERVISOR") {
+    throw new Error("You do not have permission to manage timesheets");
+  }
+  return access;
+}
+
+export async function requireTimesheetApprovalAccess(
+  ctx: AuthCtx,
+  siteId: Id<"sites">,
+) {
+  const access = await requireTimesheetManagementAccess(ctx, siteId);
+  if (access.role !== "SUPER_ADMIN" && access.role !== "AREA_MANAGER") {
+    throw new Error("You do not have permission to approve or reopen timesheets");
+  }
+  return access;
+}

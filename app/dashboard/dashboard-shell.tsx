@@ -29,6 +29,21 @@ export default function DashboardShell({
   const [mobileOpen, setMobileOpen] =
     useState(false);
 
+  const [sidebarCollapsed, setSidebarCollapsed] =
+    useState(false);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setSidebarCollapsed(
+        window.localStorage.getItem(
+          "sanitary-logic-sidebar-collapsed",
+        ) === "true",
+      );
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
   useEffect(() => {
     if (context === undefined) {
       return;
@@ -95,12 +110,27 @@ export default function DashboardShell({
           context.siteAssignments
         }
         mobileOpen={mobileOpen}
+        collapsed={sidebarCollapsed}
+        firstName={context.user.firstName}
+        onCollapsedChange={(collapsed) => {
+          setSidebarCollapsed(collapsed);
+          window.localStorage.setItem(
+            "sanitary-logic-sidebar-collapsed",
+            String(collapsed),
+          );
+        }}
         onMobileClose={() =>
           setMobileOpen(false)
         }
       />
 
-      <div className="lg:pl-72">
+      <div
+        className={`transition-[margin] duration-300 ease-out motion-reduce:transition-none ${
+          sidebarCollapsed
+            ? "lg:ml-[92px]"
+            : "lg:ml-[280px]"
+        }`}
+      >
         <DashboardHeader
           role={role}
           companyName={
