@@ -12,6 +12,7 @@ import {
   PackageSearch,
   CalendarRange,
   Timer,
+  KeyRound,
 } from "lucide-react";
 
 export type AppRole =
@@ -71,6 +72,12 @@ export const navigation: NavigationSection[] = [
         href: "/dashboard/sites/:siteId/timesheets",
         icon: Timer,
         roles: ["SITE_MANAGER"],
+      },
+      {
+        title: "Key Manager",
+        href: "/dashboard/sites/:siteId/key-manager",
+        icon: KeyRound,
+        roles: ["SUPER_ADMIN", "AREA_MANAGER", "SITE_MANAGER"],
       },
       {
         title: "Sites",

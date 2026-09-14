@@ -439,6 +439,29 @@ export default defineSchema({
     .index("by_site", ["siteId"])
     .index("by_company", ["companyId"]),
 
+  siteKeys: defineTable({
+    companyId: v.id("companies"),
+    siteId: v.id("sites"),
+    assignedEmployeeId: v.optional(v.id("employees")),
+    assignedUserId: v.optional(v.id("users")),
+    usageWindow: v.string(),
+    keyName: v.string(),
+    keyNumber: v.string(),
+    quantity: v.number(),
+    details: v.optional(v.string()),
+    code: v.optional(v.string()),
+    passcode: v.optional(v.string()),
+    createdBy: v.id("users"),
+    updatedBy: v.id("users"),
+    deletedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_siteId", ["siteId"])
+    .index("by_companyId", ["companyId"])
+    .index("by_assignedEmployeeId", ["assignedEmployeeId"])
+    .index("by_assignedUserId", ["assignedUserId"]),
+
   onboardingTemplateItems: defineTable({
     companyId: v.id("companies"),
     templateId: v.id("onboardingTemplates"),

@@ -304,6 +304,21 @@ export async function requireSiteDocumentManagementAccess(
   return access;
 }
 
+export async function requireKeyManagementAccess(
+  ctx: AuthCtx,
+  siteId: Id<"sites">,
+) {
+  const access = await requireSiteAccess(ctx, siteId);
+  if (
+    access.role !== "SUPER_ADMIN" &&
+    access.role !== "AREA_MANAGER" &&
+    access.role !== "SITE_MANAGER"
+  ) {
+    throw new Error("You do not have permission to access the Key Manager");
+  }
+  return access;
+}
+
 export async function requireRosterReadAccess(
   ctx: AuthCtx,
   siteId: Id<"sites">,
