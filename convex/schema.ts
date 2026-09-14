@@ -48,6 +48,7 @@ const specialScopeSchedule = v.union(
     startsOn: v.string(),
     endsOn: v.optional(v.string()),
     weekdays: v.optional(v.array(plannerWeekday)),
+    intervalWeeks: v.optional(v.number()),
     status: activeStatus,
     createdBy: v.id("users"),
     updatedBy: v.id("users"),

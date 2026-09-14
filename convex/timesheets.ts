@@ -340,6 +340,28 @@ export const addUnscheduledTime = mutation({
   },
 });
 
+export const removeDraft = mutation({
+  args: { timesheetId: v.id("employeeTimesheets") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const timesheet = await ctx.db.get(args.timesheetId);
+    if (!timesheet) throw new Error("Timesheet not found");
+    const access = await requireTimesheetManagementAccess(ctx, timesheet.siteId);
+    if (timesheet.companyId !== access.site.companyId) throw new Error("Timesheet company relationship is invalid");
+    if (timesheet.status !== "DRAFT") throw new Error("Only draft timesheets can be deleted");
+
+    const entries = await ctx.db
+      .query("timesheetEntries")
+      .withIndex("by_timesheet", (q) => q.eq("timesheetId", timesheet._id))
+      .take(1001);
+    if (entries.length > 1000) throw new Error("This draft has too many entries to delete in one operation");
+
+    for (const entry of entries) await ctx.db.delete(entry._id);
+    await ctx.db.delete(timesheet._id);
+    return null;
+  },
+});
+
 export const submit = mutation({ args: { timesheetId: v.id("employeeTimesheets") }, returns: v.null(), handler: async (ctx, args) => { const { timesheet, access } = await assertEditableTimesheet(ctx, args.timesheetId); if (timesheet.status !== "DRAFT" && timesheet.status !== "REJECTED") throw new Error("Only draft or rejected timesheets can be submitted"); const now = Date.now(); await ctx.db.patch(timesheet._id, { status: "SUBMITTED", submittedAt: now, submittedBy: access.user._id, rejectionReason: undefined, updatedBy: access.user._id, updatedAt: now }); return null; } });
 export const approve = mutation({ args: { timesheetId: v.id("employeeTimesheets") }, returns: v.null(), handler: async (ctx, args) => { const timesheet = await ctx.db.get(args.timesheetId); if (!timesheet) throw new Error("Timesheet not found"); const access = await requireTimesheetApprovalAccess(ctx, timesheet.siteId); if (timesheet.companyId !== access.site.companyId) throw new Error("Timesheet company relationship is invalid"); if (timesheet.status !== "SUBMITTED") throw new Error("Only submitted timesheets can be approved"); const now = Date.now(); await ctx.db.patch(timesheet._id, { status: "APPROVED", approvedAt: now, approvedBy: access.user._id, updatedBy: access.user._id, updatedAt: now }); return null; } });
 export const reject = mutation({ args: { timesheetId: v.id("employeeTimesheets"), reason: v.string() }, returns: v.null(), handler: async (ctx, args) => { const timesheet = await ctx.db.get(args.timesheetId); if (!timesheet) throw new Error("Timesheet not found"); const access = await requireTimesheetApprovalAccess(ctx, timesheet.siteId); if (timesheet.companyId !== access.site.companyId) throw new Error("Timesheet company relationship is invalid"); if (timesheet.status !== "SUBMITTED") throw new Error("Only submitted timesheets can be rejected"); const reason = args.reason.trim(); if (!reason) throw new Error("A rejection reason is required"); const now = Date.now(); await ctx.db.patch(timesheet._id, { status: "REJECTED", rejectedAt: now, rejectedBy: access.user._id, rejectionReason: reason, updatedBy: access.user._id, updatedAt: now }); return null; } });

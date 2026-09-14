@@ -11,12 +11,25 @@ import { Button } from "@/components/ui/button";
 
 type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 type Frequency = Doc<"tenancyScopeItemSchedules">["frequency"];
-type ScheduleDraft = { frequency: Frequency; recurrenceMode: "RECURRING" | "MANUAL_DATE"; completionMode: "AUTO" | "MANUAL"; startsOn?: string; endsOn?: string; weekdays?: Weekday[]; scheduledFor?: string };
+type FrequencyChoice = Frequency | "FORTNIGHTLY" | "SIX_WEEKLY" | "CUSTOM_WEEKLY";
+type ScheduleDraft = { frequency: Frequency; recurrenceMode: "RECURRING" | "MANUAL_DATE"; completionMode: "AUTO" | "MANUAL"; startsOn?: string; endsOn?: string; weekdays?: Weekday[]; intervalWeeks?: number; scheduledFor?: string };
 type ServiceDraft = { catalogueKey?: string; title: string; description?: string; instructions?: string; schedules: ScheduleDraft[] };
 type SavedScope = NonNullable<ReturnType<typeof useQuery<typeof api.specialTenancyScope.getSpecialScope>>>;
 
 const WEEKDAYS = [[0, "Sun"], [1, "Mon"], [2, "Tue"], [3, "Wed"], [4, "Thu"], [5, "Fri"], [6, "Sat"]] as const;
-const FREQUENCIES: Frequency[] = ["DAILY", "TWICE_WEEKLY", "WEEKLY", "MONTHLY", "QUARTERLY", "BI_ANNUAL", "ANNUAL", "SITE_DETERMINED"];
+const FREQUENCY_CHOICES: Array<{ value: FrequencyChoice; label: string }> = [
+  { value: "DAILY", label: "Daily" },
+  { value: "TWICE_WEEKLY", label: "Bi-Weekly (twice per week)" },
+  { value: "WEEKLY", label: "Weekly" },
+  { value: "FORTNIGHTLY", label: "Fortnightly (every 2 weeks)" },
+  { value: "SIX_WEEKLY", label: "Every 6 weeks" },
+  { value: "CUSTOM_WEEKLY", label: "Custom week interval…" },
+  { value: "MONTHLY", label: "Monthly" },
+  { value: "QUARTERLY", label: "Quarterly" },
+  { value: "BI_ANNUAL", label: "Bi-Annual" },
+  { value: "ANNUAL", label: "Annual" },
+  { value: "SITE_DETERMINED", label: "Site Determined" },
+];
 const FREQUENCY_GROUPS: Array<{ label: string; frequencies: Frequency[] }> = [
   { label: "Daily", frequencies: ["DAILY"] },
   { label: "Weekly", frequencies: ["WEEKLY", "TWICE_WEEKLY"] },
@@ -85,7 +98,9 @@ export function SpecialScopePanel({ siteId }: { siteId: Id<"sites"> }) {
     }));
   }
 
-  function changeFrequency(serviceIndex: number, scheduleIndex: number, frequency: Frequency) {
+  function changeFrequency(serviceIndex: number, scheduleIndex: number, choice: FrequencyChoice) {
+    const intervalWeeks = choice === "FORTNIGHTLY" ? 2 : choice === "SIX_WEEKLY" ? 6 : choice === "CUSTOM_WEEKLY" ? 3 : undefined;
+    const frequency: Frequency = intervalWeeks ? "WEEKLY" : (choice as Frequency);
     const manualDate = frequency === "SITE_DETERMINED";
     updateSchedule(serviceIndex, scheduleIndex, {
       frequency,
@@ -95,6 +110,7 @@ export function SpecialScopePanel({ siteId }: { siteId: Id<"sites"> }) {
       endsOn: undefined,
       scheduledFor: manualDate ? today : undefined,
       weekdays: frequency === "WEEKLY" ? [1] : frequency === "TWICE_WEEKLY" ? [1, 4] : undefined,
+      intervalWeeks,
     });
   }
 
@@ -163,12 +179,12 @@ function ScopeEditor({ setup, step, timeZone, setTimeZone, drafts, setDrafts, to
   setup: NonNullable<ReturnType<typeof useQuery<typeof api.specialTenancyScope.getSetupData>>>;
   step: 2 | 3; timeZone: string; setTimeZone: (value: string) => void; drafts: ServiceDraft[]; setDrafts: React.Dispatch<React.SetStateAction<ServiceDraft[]>>;
   toggleCatalogue: (service: (typeof setup)["catalogue"][number]) => void; updateService: (index: number, update: Partial<ServiceDraft>) => void;
-  updateSchedule: (serviceIndex: number, scheduleIndex: number, update: Partial<ScheduleDraft>) => void; changeFrequency: (serviceIndex: number, scheduleIndex: number, frequency: Frequency) => void;
+  updateSchedule: (serviceIndex: number, scheduleIndex: number, update: Partial<ScheduleDraft>) => void; changeFrequency: (serviceIndex: number, scheduleIndex: number, frequency: FrequencyChoice) => void;
   toggleWeekday: (serviceIndex: number, scheduleIndex: number, day: Weekday) => void; today: string; saving: boolean; setStep: (step: 2 | 3) => void; onCancel: () => void; onSubmit: () => void; isExisting: boolean;
 }) {
   if (step === 3) return <div className="mt-6 space-y-4"><div className="divide-y divide-border overflow-hidden rounded-xl border border-border">{drafts.map((draft, index) => <div key={`${draft.catalogueKey ?? "custom"}-${index}`} className="p-4"><p className="font-bold">{draft.title}</p><p className="mt-1 text-sm text-muted-foreground">{draft.schedules.map(schedulePattern).join(" · ")}</p></div>)}</div><div className="flex justify-between gap-3"><Button variant="outline" onClick={() => setStep(2)}><ChevronLeft className="size-4" />Back</Button><Button disabled={saving} onClick={onSubmit}>{saving ? "Saving…" : isExisting ? "Update Special Scope" : "Create Special Scope"}</Button></div></div>;
 
-  const invalid = drafts.length === 0 || drafts.some((draft) => !draft.title.trim() || draft.schedules.length === 0 || draft.schedules.some((schedule) => (schedule.recurrenceMode === "RECURRING" && !schedule.startsOn) || ((schedule.frequency === "WEEKLY" || schedule.frequency === "TWICE_WEEKLY") && !schedule.weekdays?.length) || (schedule.frequency === "TWICE_WEEKLY" && schedule.weekdays?.length !== 2) || (schedule.recurrenceMode === "MANUAL_DATE" && !schedule.scheduledFor)));
+  const invalid = drafts.length === 0 || drafts.some((draft) => !draft.title.trim() || draft.schedules.length === 0 || draft.schedules.some((schedule) => (schedule.recurrenceMode === "RECURRING" && !schedule.startsOn) || ((schedule.frequency === "WEEKLY" || schedule.frequency === "TWICE_WEEKLY") && !schedule.weekdays?.length) || (schedule.frequency === "TWICE_WEEKLY" && schedule.weekdays?.length !== 2) || (schedule.intervalWeeks !== undefined && (!Number.isInteger(schedule.intervalWeeks) || schedule.intervalWeeks < 1 || schedule.intervalWeeks > 52)) || (schedule.recurrenceMode === "MANUAL_DATE" && !schedule.scheduledFor)));
   return <div className="mt-6 space-y-6">
     <label className="block max-w-xl text-sm font-bold">Scope timezone<input className="form-input mt-2" value={timeZone} onChange={(event) => setTimeZone(event.target.value)} /></label>
     <div><p className="label-caps text-muted-foreground">Service catalogue</p><div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{setup.catalogue.map((service) => {
@@ -184,9 +200,11 @@ function ScopeEditor({ setup, step, timeZone, setTimeZone, drafts, setDrafts, to
   </div>;
 }
 
-function ScheduleEditor({ schedule, onFrequency, onUpdate, onWeekday, onRemove }: { schedule: ScheduleDraft; onFrequency: (frequency: Frequency) => void; onUpdate: (update: Partial<ScheduleDraft>) => void; onWeekday: (day: Weekday) => void; onRemove: () => void }) {
+function ScheduleEditor({ schedule, onFrequency, onUpdate, onWeekday, onRemove }: { schedule: ScheduleDraft; onFrequency: (frequency: FrequencyChoice) => void; onUpdate: (update: Partial<ScheduleDraft>) => void; onWeekday: (day: Weekday) => void; onRemove: () => void }) {
+  const frequencyChoice = scheduleFrequencyChoice(schedule);
   return <div className="rounded-xl bg-muted/40 p-4"><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-    <EditorField label="Frequency"><select className="form-input" value={schedule.frequency} onChange={(event) => onFrequency(event.target.value as Frequency)}>{FREQUENCIES.map((frequency) => <option key={frequency} value={frequency}>{frequencyLabel(frequency)}</option>)}</select></EditorField>
+    <EditorField label="Frequency"><select className="form-input" value={frequencyChoice} onChange={(event) => onFrequency(event.target.value as FrequencyChoice)}>{FREQUENCY_CHOICES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></EditorField>
+    {frequencyChoice === "CUSTOM_WEEKLY" && <EditorField label="Repeat every (weeks)"><input type="number" min={2} max={52} step={1} className="form-input" value={schedule.intervalWeeks ?? 3} onChange={(event) => onUpdate({ intervalWeeks: Number(event.target.value) })} /></EditorField>}
     <EditorField label="Completion mode"><select className="form-input" value={schedule.completionMode} disabled={schedule.recurrenceMode === "MANUAL_DATE"} onChange={(event) => onUpdate({ completionMode: event.target.value as "AUTO" | "MANUAL" })}><option value="AUTO">Automatic</option><option value="MANUAL">Manual</option></select></EditorField>
     {schedule.recurrenceMode === "MANUAL_DATE" ? <EditorField label="Scheduled date"><input type="date" className="form-input" value={schedule.scheduledFor ?? ""} onChange={(event) => onUpdate({ scheduledFor: event.target.value })} /></EditorField> : <><EditorField label="Starts on"><input type="date" className="form-input" value={schedule.startsOn ?? ""} onChange={(event) => onUpdate({ startsOn: event.target.value })} /></EditorField><EditorField label="Ends on"><input type="date" className="form-input" value={schedule.endsOn ?? ""} onChange={(event) => onUpdate({ endsOn: event.target.value || undefined })} /></EditorField></>}
   </div>{(schedule.frequency === "WEEKLY" || schedule.frequency === "TWICE_WEEKLY") && <div className="mt-3"><p className="text-xs font-semibold text-muted-foreground">Weekdays</p><div className="mt-2 flex flex-wrap gap-2">{WEEKDAYS.map(([day, label]) => <button type="button" key={day} onClick={() => onWeekday(day)} className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold ${schedule.weekdays?.includes(day) ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background"}`}>{label}</button>)}</div></div>}<button type="button" className="mt-3 text-xs font-semibold text-destructive" onClick={onRemove}>Remove rule</button></div>;
@@ -199,12 +217,14 @@ function EditorField({ label, children }: { label: string; children: React.React
 function Pill({ children }: { children: React.ReactNode }) { return <span className="w-fit rounded-full bg-muted px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{children}</span>; }
 
 function scheduleToDraft(schedule: Doc<"tenancyScopeItemSchedules">): ScheduleDraft {
-  return schedule.recurrenceMode === "MANUAL_DATE" ? { frequency: "SITE_DETERMINED", recurrenceMode: "MANUAL_DATE", completionMode: "MANUAL", scheduledFor: schedule.scheduledFor } : { frequency: schedule.frequency, recurrenceMode: "RECURRING", completionMode: schedule.completionMode, startsOn: schedule.startsOn, endsOn: schedule.endsOn, weekdays: schedule.weekdays };
+  return schedule.recurrenceMode === "MANUAL_DATE" ? { frequency: "SITE_DETERMINED", recurrenceMode: "MANUAL_DATE", completionMode: "MANUAL", scheduledFor: schedule.scheduledFor } : { frequency: schedule.frequency, recurrenceMode: "RECURRING", completionMode: schedule.completionMode, startsOn: schedule.startsOn, endsOn: schedule.endsOn, weekdays: schedule.weekdays, intervalWeeks: schedule.intervalWeeks };
 }
 function newSchedule(frequency: Frequency, today: string): ScheduleDraft { return frequency === "SITE_DETERMINED" ? { frequency, recurrenceMode: "MANUAL_DATE", completionMode: "MANUAL", scheduledFor: today } : { frequency, recurrenceMode: "RECURRING", completionMode: defaultCompletionMode(frequency), startsOn: today, weekdays: frequency === "WEEKLY" ? [1] : frequency === "TWICE_WEEKLY" ? [1, 4] : undefined }; }
 function defaultCompletionMode(frequency: Frequency): "AUTO" | "MANUAL" { return frequency === "DAILY" || frequency === "WEEKLY" || frequency === "TWICE_WEEKLY" ? "AUTO" : "MANUAL"; }
 function frequencyLabel(frequency: Frequency) { if (frequency === "TWICE_WEEKLY") return "Bi-Weekly"; if (frequency === "BI_ANNUAL") return "Bi-Annual"; if (frequency === "SITE_DETERMINED") return "Site Determined"; return frequency[0] + frequency.slice(1).toLowerCase(); }
-function schedulePattern(schedule: { frequency: Frequency; weekdays?: Weekday[]; scheduledFor?: string }) { if (schedule.frequency === "SITE_DETERMINED") return schedule.scheduledFor ? `Scheduled ${displayDate(schedule.scheduledFor)}` : "Site Determined"; if (schedule.frequency === "WEEKLY" || schedule.frequency === "TWICE_WEEKLY") { const days = (schedule.weekdays ?? []).map((day) => WEEKDAYS.find(([value]) => value === day)?.[1]).filter(Boolean).join(" / "); return days ? `${frequencyLabel(schedule.frequency)} · ${days}` : frequencyLabel(schedule.frequency); } return frequencyLabel(schedule.frequency); }
+function scheduleFrequencyChoice(schedule: { frequency: Frequency; intervalWeeks?: number }): FrequencyChoice { if (schedule.frequency !== "WEEKLY" || !schedule.intervalWeeks || schedule.intervalWeeks === 1) return schedule.frequency; if (schedule.intervalWeeks === 2) return "FORTNIGHTLY"; if (schedule.intervalWeeks === 6) return "SIX_WEEKLY"; return "CUSTOM_WEEKLY"; }
+function scheduleFrequencyLabel(schedule: { frequency: Frequency; intervalWeeks?: number }) { if (schedule.frequency === "WEEKLY" && schedule.intervalWeeks === 2) return "Fortnightly"; if (schedule.frequency === "WEEKLY" && schedule.intervalWeeks && schedule.intervalWeeks > 1) return `Every ${schedule.intervalWeeks} weeks`; return frequencyLabel(schedule.frequency); }
+function schedulePattern(schedule: { frequency: Frequency; weekdays?: Weekday[]; intervalWeeks?: number; scheduledFor?: string }) { if (schedule.frequency === "SITE_DETERMINED") return schedule.scheduledFor ? `Scheduled ${displayDate(schedule.scheduledFor)}` : "Site Determined"; if (schedule.frequency === "WEEKLY" || schedule.frequency === "TWICE_WEEKLY") { const days = (schedule.weekdays ?? []).map((day) => WEEKDAYS.find(([value]) => value === day)?.[1]).filter(Boolean).join(" / "); const label = scheduleFrequencyLabel(schedule); return days ? `${label} · ${days}` : label; } return frequencyLabel(schedule.frequency); }
 
 function nextDueDate(schedule: Doc<"tenancyScopeItemSchedules">, today: string) {
   if (schedule.recurrenceMode === "MANUAL_DATE") return schedule.scheduledFor >= today ? schedule.scheduledFor : null;
@@ -216,7 +236,7 @@ function isOccurrenceDate(schedule: Extract<Doc<"tenancyScopeItemSchedules">, { 
   if (date < schedule.startsOn || (schedule.endsOn && date > schedule.endsOn)) return false;
   const current = parseDate(date); const anchor = parseDate(schedule.startsOn);
   if (schedule.frequency === "DAILY") return true;
-  if (schedule.frequency === "WEEKLY" || schedule.frequency === "TWICE_WEEKLY") return (schedule.weekdays ?? []).includes(current.getUTCDay() as Weekday);
+  if (schedule.frequency === "WEEKLY" || schedule.frequency === "TWICE_WEEKLY") { const weeksSinceStart = Math.floor((current.getTime() - anchor.getTime()) / (7 * 24 * 60 * 60 * 1000)); return weeksSinceStart % (schedule.intervalWeeks ?? 1) === 0 && (schedule.weekdays ?? []).includes(current.getUTCDay() as Weekday); }
   const monthDelta = (current.getUTCFullYear() - anchor.getUTCFullYear()) * 12 + current.getUTCMonth() - anchor.getUTCMonth();
   const interval = schedule.frequency === "MONTHLY" ? 1 : schedule.frequency === "QUARTERLY" ? 3 : schedule.frequency === "BI_ANNUAL" ? 6 : 12;
   if (monthDelta < 0 || monthDelta % interval !== 0) return false;

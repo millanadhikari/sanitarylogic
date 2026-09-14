@@ -161,6 +161,7 @@ type ScheduleLike =
       startsOn: string;
       endsOn?: string;
       weekdays?: Weekday[];
+      intervalWeeks?: number;
     }
   | {
       recurrenceMode: "MANUAL_DATE";
@@ -190,7 +191,12 @@ export function isOccurrenceDate(schedule: ScheduleLike, date: string) {
     schedule.frequency === "WEEKLY" ||
     schedule.frequency === "TWICE_WEEKLY"
   ) {
-    return (schedule.weekdays ?? []).includes(current.getUTCDay() as Weekday);
+    const intervalWeeks = schedule.intervalWeeks ?? 1;
+    const weeksSinceStart = Math.floor(daysBetween(schedule.startsOn, date) / 7);
+    return (
+      weeksSinceStart % intervalWeeks === 0 &&
+      (schedule.weekdays ?? []).includes(current.getUTCDay() as Weekday)
+    );
   }
 
   const monthDelta =
@@ -243,6 +249,7 @@ export function validateScheduleInput(input: {
   startsOn?: string;
   endsOn?: string;
   weekdays?: Weekday[];
+  intervalWeeks?: number;
   scheduledFor?: string;
 }, options?: { flexibleWeekly?: boolean }) {
   const defaults = DEFAULT_SCHEDULE_MODES[input.frequency];
@@ -254,6 +261,14 @@ export function validateScheduleInput(input: {
     input.completionMode !== "MANUAL"
   ) {
     throw new Error("Site-determined work must use manual completion");
+  }
+
+  const intervalWeeks = input.intervalWeeks ?? 1;
+  if (!Number.isInteger(intervalWeeks) || intervalWeeks < 1 || intervalWeeks > 52) {
+    throw new Error("Weekly repeat interval must be a whole number from 1 to 52");
+  }
+  if (input.intervalWeeks !== undefined && input.frequency !== "WEEKLY") {
+    throw new Error("A weekly repeat interval is only supported for weekly schedules");
   }
 
   if (input.recurrenceMode === "MANUAL_DATE") {
