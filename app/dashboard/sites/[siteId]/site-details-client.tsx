@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Users,
   PackageSearch,
+  KeyRound,
 } from "lucide-react";
 
 import { api } from "@/convex/_generated/api";
@@ -136,6 +137,14 @@ export default function SiteDetailsClient() {
                   <Link href={`/dashboard/sites/${siteId}/timesheets`}>
                     <Timer className="size-4" />
                     View Timesheets
+                  </Link>
+                </Button>
+              )}
+              {(siteData.role === "SUPER_ADMIN" || siteData.role === "AREA_MANAGER" || siteData.role === "SITE_MANAGER") && (
+                <Button asChild variant="outline" className="gap-2 rounded-xl">
+                  <Link href={`/dashboard/sites/${siteId}/key-manager`}>
+                    <KeyRound className="size-4" />
+                    Key Manager
                   </Link>
                 </Button>
               )}

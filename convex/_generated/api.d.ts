@@ -33,6 +33,7 @@ import type * as periodicPlanner from "../periodicPlanner.js";
 import type * as roster from "../roster.js";
 import type * as siteContacts from "../siteContacts.js";
 import type * as siteDocuments from "../siteDocuments.js";
+import type * as siteKeys from "../siteKeys.js";
 import type * as siteScope from "../siteScope.js";
 import type * as sites from "../sites.js";
 import type * as sitesAssignments from "../sitesAssignments.js";
@@ -76,6 +77,7 @@ declare const fullApi: ApiFromModules<{
   roster: typeof roster;
   siteContacts: typeof siteContacts;
   siteDocuments: typeof siteDocuments;
+  siteKeys: typeof siteKeys;
   siteScope: typeof siteScope;
   sites: typeof sites;
   sitesAssignments: typeof sitesAssignments;
