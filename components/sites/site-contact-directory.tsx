@@ -65,7 +65,7 @@ export function SiteContactDirectory({ siteId }: { siteId: Id<"sites"> }) {
       ) : (
         <div className="max-h-[520px] divide-y divide-border overflow-y-auto">
           {data.contacts.map((contact) => (
-            <div key={contact._id} className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center">
+            <div key={contact._id} className="grid grid-cols-[44px_minmax(0,1fr)_auto] items-start gap-4 px-6 py-5">
               <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 font-bold text-primary">
                 {initials(contact.name)}
               </span>
@@ -74,23 +74,29 @@ export function SiteContactDirectory({ siteId }: { siteId: Id<"sites"> }) {
                 <p className="mt-1 break-words text-sm text-muted-foreground">
                   {[contact.jobTitle, contact.organisation].filter(Boolean).join(" · ") || "Site contact"}
                 </p>
+                <div className="mt-3 flex min-w-0 flex-wrap gap-x-5 gap-y-2">
+                  {contact.email && (
+                    <a title={`Email ${contact.name}`} href={`mailto:${contact.email}`} className="inline-flex min-w-0 items-center gap-2 text-sm text-muted-foreground hover:text-primary hover:underline">
+                      <Mail className="size-4 shrink-0" />
+                      <span className="break-all">{contact.email}</span>
+                    </a>
+                  )}
+                  {contact.phone && (
+                    <a title={`Call ${contact.name}`} href={`tel:${contact.phone}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary hover:underline">
+                      <Phone className="size-4 shrink-0" />
+                      <span>{contact.phone}</span>
+                    </a>
+                  )}
+                  {!contact.email && !contact.phone && (
+                    <span className="text-xs text-muted-foreground">No contact details</span>
+                  )}
+                </div>
                 {contact.notes && (
                   <p className="mt-2 break-words text-xs text-muted-foreground">{contact.notes}</p>
                 )}
               </div>
-              <div className="flex flex-wrap items-center gap-1">
-                {contact.email && (
-                  <a title={`Email ${contact.name}`} href={`mailto:${contact.email}`} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-primary">
-                    <Mail className="size-4" />
-                  </a>
-                )}
-                {contact.phone && (
-                  <a title={`Call ${contact.name}`} href={`tel:${contact.phone}`} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-primary">
-                    <Phone className="size-4" />
-                  </a>
-                )}
-                {data.canManage && (
-                  <>
+              {data.canManage ? (
+                <div className="flex shrink-0 items-center gap-1">
                     <button title={`Edit ${contact.name}`} onClick={() => setEditing(contact)} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground">
                       <Pencil className="size-4" />
                     </button>
@@ -109,9 +115,10 @@ export function SiteContactDirectory({ siteId }: { siteId: Id<"sites"> }) {
                     >
                       <Trash2 className="size-4" />
                     </button>
-                  </>
-                )}
-              </div>
+                </div>
+              ) : (
+                <span />
+              )}
             </div>
           ))}
         </div>

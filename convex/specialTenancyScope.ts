@@ -32,6 +32,7 @@ const scheduleInputValidator = v.object({
   startsOn: v.optional(v.string()),
   endsOn: v.optional(v.string()),
   weekdays: v.optional(v.array(weekdayValidator)),
+  intervalWeeks: v.optional(v.number()),
   scheduledFor: v.optional(v.string()),
 });
 
@@ -50,6 +51,7 @@ type ScheduleInput = {
   startsOn?: string;
   endsOn?: string;
   weekdays?: Weekday[];
+  intervalWeeks?: number;
   scheduledFor?: string;
 };
 
@@ -190,5 +192,5 @@ async function insertSchedule(ctx: MutationCtx, args: {
     return;
   }
   if (args.schedule.frequency === "SITE_DETERMINED" || !args.schedule.startsOn) throw new Error("Recurring schedule is invalid");
-  await ctx.db.insert("tenancyScopeItemSchedules", { ...base, frequency: args.schedule.frequency, recurrenceMode: "RECURRING", completionMode: args.schedule.completionMode, startsOn: args.schedule.startsOn, endsOn: args.schedule.endsOn, weekdays: args.schedule.weekdays });
+  await ctx.db.insert("tenancyScopeItemSchedules", { ...base, frequency: args.schedule.frequency, recurrenceMode: "RECURRING", completionMode: args.schedule.completionMode, startsOn: args.schedule.startsOn, endsOn: args.schedule.endsOn, weekdays: args.schedule.weekdays, intervalWeeks: args.schedule.intervalWeeks });
 }

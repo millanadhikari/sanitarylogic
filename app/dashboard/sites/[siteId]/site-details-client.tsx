@@ -212,8 +212,6 @@ export default function SiteDetailsClient() {
         />
       </section>
 
-      <SiteTeamPanel siteId={siteId} />
-
       {/* ==================================================
           SITE INFORMATION / CONTACTS
       ================================================== */}
@@ -352,6 +350,10 @@ export default function SiteDetailsClient() {
           </div>
         )}
       </section>
+
+      {siteData.role !== "CLEANER" && (
+        <SiteTeamPanel siteId={siteId} />
+      )}
 
       {/* ==================================================
           EVENTS + OPERATIONAL INFORMATION
